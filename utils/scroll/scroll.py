@@ -1,25 +1,42 @@
 import webbrowser
 import pyautogui
 import time
+import os
+from PIL import ImageChops
 
 def open_url_and_scroll(url, x, y):
-    # Open the URL
     webbrowser.open(url)
-    
-    # Wait for the page to load
-    time.sleep(5)  # Adjust the timing based on your internet speed and page load time
-    
-    # Move the cursor to the specified coordinates
+    time.sleep(5)
+
     pyautogui.moveTo(x, y)
     
-    # Scroll to the end of the page
-    # - Number of scrolls needed may vary based on page length; adjust as necessary
+    screenshots_dir = 'utils\scroll\web_screenshots'
+    os.makedirs(screenshots_dir, exist_ok=True)
+
+    screenshot_index = 0
+    last_screenshot = None
+    attempts_without_scroll = 0
+
     while True:
-        scroll_amount = pyautogui.scroll(-1000)  # Scrolls up 1000 "clicks"
-        if not scroll_amount:
-            break
+        screenshot = pyautogui.screenshot()
+        screenshot_path = os.path.join(screenshots_dir, f'screenshot_{screenshot_index}.png')
+        screenshot.save(screenshot_path)
+        print(f"Screenshot saved as {screenshot_path}")
+        screenshot_index += 1
 
-    print("Reached the end of the page.")
+        if last_screenshot:
+            difference = ImageChops.difference(screenshot, last_screenshot)
+            if not difference.getbbox():
+                attempts_without_scroll += 1
+                if attempts_without_scroll > 3:
+                    print("Reached the end of the scrollable area.")
+                    break
+            else:
+                attempts_without_scroll = 0
 
-# Example usage
-open_url_and_scroll('https://www.instagram.com/p/C7OjExPIGJZ/', 1247, 159)  # Replace 500, 500 with your desired coordinates
+        last_screenshot = screenshot
+        pyautogui.scroll(-1000)
+        time.sleep(2)
+
+
+open_url_and_scroll('https://www.instagram.com/p/C71p6jsqXAZ/', 1234, 558)
